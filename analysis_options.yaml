@@ -1,0 +1,26 @@
+# Analysis Options for Flutter Project
+
+include: package:flutter_lints/flutter.yaml
+
+linter:
+  rules:
+    # Error rules
+    avoid_print: true
+    avoid_unnecessary_containers: true
+    prefer_const_constructors: true
+    prefer_const_literals_to_create_immutables: true
+    
+    # Style rules
+    always_declare_return_types: true
+    require_trailing_commas: false
+    
+    # Pub rules
+    sort_pub_dependencies: true
+
+analyzer:
+  exclude:
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"
+  
+  errors:
+    invalid_annotation_target: ignore
