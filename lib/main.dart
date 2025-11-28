@@ -5,11 +5,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'screens/login_screen.dart';
 import 'screens/control_screen.dart';
 import 'services/auth_service.dart';
+import 'config.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initHiveForFlutter();
-  
+
   runApp(const IntercomDemoApp());
 }
 
@@ -18,10 +19,13 @@ class IntercomDemoApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // GraphQL Client Configuration
+    // GraphQL Client Configuration using values from `lib/config.dart`
     final HttpLink httpLink = HttpLink(
-      // TODO: Replace with your Supabase GraphQL endpoint
-      'https://your-project.supabase.co/graphql/v1',
+      Config.supabaseGraphqlUrl,
+      defaultHeaders: {
+        'apikey': Config.supabaseAnonKey,
+        'Content-Type': 'application/json',
+      },
     );
 
     final AuthLink authLink = AuthLink(
@@ -97,7 +101,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
   Future<void> _checkAuthStatus() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('auth_token');
-    
+
     setState(() {
       _isAuthenticated = token != null;
       _isLoading = false;
