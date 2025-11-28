@@ -1,102 +1,62 @@
 import 'package:graphql_flutter/graphql_flutter.dart';
 
 class DoorService {
-  // GraphQL Mutation for opening door
-  static const String openDoorMutation = r'''
-    mutation OpenDoor($userId: String!, $action: String!) {
-      insert_door_logs_one(object: {
-        user_id: $userId,
-        action: $action,
-        timestamp: "now()"
-      }) {
-        id
-        action
-        timestamp
-      }
-    }
-  ''';
-
-  // GraphQL Query to fetch door logs
-  static const String getDoorLogsQuery = r'''
-    query GetDoorLogs($userId: String!, $limit: Int!) {
-      door_logs(
-        where: {user_id: {_eq: $userId}},
-        order_by: {timestamp: desc},
-        limit: $limit
-      ) {
-        id
-        action
-        timestamp
-      }
-    }
-  ''';
-
+  /// Insert a door log via Supabase REST (PostgREST)
   Future<Map<String, dynamic>> openDoor(
-    GraphQLClient client,
+    dynamic /*GraphQLClient*/ client,
     String userId,
   ) async {
     try {
-      final MutationOptions options = MutationOptions(
-        document: gql(openDoorMutation),
-        variables: {
-          'userId': userId,
-          'action': 'door_opened',
+      final uri = Uri.parse('${Config.supabaseRestUrl}/door_logs');
+      final body = jsonEncode({
+        'user_id': userId,
+        'action': 'door_opened',
+      });
+
+      final response = await http.post(
+        uri,
+        headers: {
+          'apikey': Config.supabaseAnonKey,
+          'Authorization': 'Bearer ${Config.supabaseAnonKey}',
+          'Content-Type': 'application/json',
         },
+        body: body,
       );
 
-      final QueryResult result = await client.mutate(options);
-
-      if (result.hasException) {
-        return {
-          'success': false,
-          'message': result.exception?.graphqlErrors.isNotEmpty == true
-              ? result.exception!.graphqlErrors.first.message
-              : 'Ошибка при открытии двери',
-        };
-      }
-
-      if (result.data != null) {
-        return {
-          'success': true,
-          'message': 'Дверь открыта',
-          'data': result.data!['insert_door_logs_one'],
-        };
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return {'success': true, 'message': 'Дверь открыта', 'data': data};
       }
 
       return {
         'success': false,
-        'message': 'Неизвестная ошибка',
+        'message': 'Ошибка при открытии двери (${response.statusCode})'
       };
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Ошибка: ${e.toString()}',
-      };
+      return {'success': false, 'message': 'Ошибка: ${e.toString()}'};
     }
   }
 
+  /// Fetch door logs for a user via Supabase REST
   Future<List<Map<String, dynamic>>> getDoorLogs(
-    GraphQLClient client,
+    dynamic /*GraphQLClient*/ client,
     String userId, {
     int limit = 10,
   }) async {
     try {
-      final QueryOptions options = QueryOptions(
-        document: gql(getDoorLogsQuery),
-        variables: {
-          'userId': userId,
-          'limit': limit,
-        },
-      );
+      final uri = Uri.parse(
+          '${Config.supabaseRestUrl}/door_logs?user_id=eq.$userId&order=timestamp.desc&limit=$limit');
 
-      final QueryResult result = await client.query(options);
+      final response = await http.get(uri, headers: {
+        'apikey': Config.supabaseAnonKey,
+        'Authorization': 'Bearer ${Config.supabaseAnonKey}',
+        'Content-Type': 'application/json',
+      });
 
-      if (result.hasException || result.data == null) {
-        return [];
-      }
+      if (response.statusCode != 200) return [];
 
-      final logs = result.data!['door_logs'] as List;
-      return logs.map((log) => log as Map<String, dynamic>).toList();
+      final List data = jsonDecode(response.body) as List;
+      return data.map((e) => e as Map<String, dynamic>).toList();
     } catch (e) {
       return [];
     }
