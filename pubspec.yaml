@@ -3,11 +3,6 @@ description: Technical demo for Azail Security System - Smart Intercom Applicati
 publish_to: 'none'
 version: 1.0.0+1
 
-name: intercom_demo
-description: Technical demo for Azail Security System - Smart Intercom Application
-publish_to: 'none'
-version: 1.0.0+1
-
 environment:
   sdk: '>=3.0.0 <4.0.0'
 
@@ -43,3 +38,4 @@ flutter:
 
   assets:
     - assets/images/
+ 
